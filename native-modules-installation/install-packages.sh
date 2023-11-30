@@ -1,7 +1,9 @@
 #!/bin/bash
 
+currentPackage="libpq@1.8.12"
+
 packages_to_run=(
-    "bcrypt@5.1.0" "bcrypt@5.0.0"
+    $currentPackage
 )
 
 
@@ -33,15 +35,16 @@ packages_that_works_node_18=(
     "tulind@0.8.18" 
     "puppeteer@19.2.0" 
     "argon2@0.23.0" 
+    "odbc@2.4.8"
 )
 
 packages_fails_node_18=(
-    "odbc@1.2.1"
+    "odbc@1.2.1" # odbc@2.4.8
     "fsevents@2.3.2" "fsevents@2.1.3" "fsevents@2.0.7" "fsevents@1.2.13"
     "libpq@1.8.12"
     "buffertools@2.1.6"
-    "contextify@0.1.15"
-    "bcrypt@3.0.8" "bcrypt@3.0.6"
+    "contextify@0.1.15" #in use and working
+    "bcrypt@3.0.8" "bcrypt@3.0.6" #in use and working
 )
 
 
@@ -55,7 +58,6 @@ puppeteer_packages=(
 log_file="failed_installs.log"
 echo "" >> "$log_file"
 (mkdir "output")
-
 echo "Starting npm installations..."
 
 for package in "${packages_to_run[@]}"; do
@@ -64,26 +66,7 @@ for package in "${packages_to_run[@]}"; do
     
     echo "Installing $package_name@$package_version"
     (npm install "$package" 2>&1) || echo "\"$package_name@$package_version\"" >> "$log_file"
-    (mv $"node_modules/$package_name" $"output/$package_name@$package_version")
 done
-
-
-# Build node-gyp packages
-# echo "Building node-gyp packages..."
-
-# for package in "${packages_to_run[@]}"; do
-#     package_name=$(echo "$package" | cut -d "@" -f 1)
-#     package_version=$(echo "$package" | cut -d "@" -f 2)
-    
-#     echo "Building node-gyp for $package_name@$package_version..."
-
-#     json_content=$(cat "./app/dir/node_modules/$package_name/package.json")
-#     echo "$json_content"
-#     install_scripts=$(jq -r '.scripts.install' "/app/dir/node_modules/$package_name/package.json")
-#     echo $install_scripts
-#     (cd "/app/dir/node_modules/$package_name" && npm run install 2>&1) || echo "Failed to build node-gyp for $package_name@$package_version" >> "$log_file"
-#     # (cd node-gyp rebuild 2>&1) || echo "Failed to build node-gyp for $package_name@$package_version" >> "$log_file"
-# done
 
 echo "Completed npm installations."
 

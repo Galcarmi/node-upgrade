@@ -1,0 +1,1 @@
+cmd_Release/tulind.node := ln -f "/app/dir/node_modules/tulind/lib/binding/Release/node-v108-linux-x64/tulind.node" "Release/tulind.node" 2>/dev/null || (rm -rf "Release/tulind.node" && cp -af "/app/dir/node_modules/tulind/lib/binding/Release/node-v108-linux-x64/tulind.node" "Release/tulind.node")
