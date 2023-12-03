@@ -27,6 +27,7 @@
     "argon2@0.23.0" 
     "odbc@2.4.8"
     "libpq@1.8.12"
+    "bcrypt@3.0.8" "bcrypt@3.0.6"
 
 # not included
     "canvas@2.11.0" 
@@ -34,7 +35,6 @@
     "fsevents@2.3.2" "fsevents@2.1.3" "fsevents@2.0.7" "fsevents@1.2.13"
     "buffertools@2.1.6"
     "contextify@0.1.15"
-    "bcrypt@3.0.8" "bcrypt@3.0.6"
     "puppeteer@1.17.0" "puppeteer@1.20.0" "puppeteer@2.0.0" "puppeteer@2.1.1" "puppeteer@3.0.0" "puppeteer@3.0.2" "puppeteer@3.3.0" "puppeteer@4.0.1"
     "puppeteer@5.5.0" "puppeteer@7.1.0" "puppeteer@8.0.0" "puppeteer@10.4.0" "puppeteer@13.1.1" "puppeteer@13.7.0" "puppeteer@14.4.1" "puppeteer@15.5.0"
 
