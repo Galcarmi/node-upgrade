@@ -26,12 +26,12 @@
     "puppeteer@19.2.0" 
     "argon2@0.23.0" 
     "odbc@2.4.8"
+    "libpq@1.8.12"
 
 # not included
     "canvas@2.11.0" 
     "odbc@1.2.1" # odbc@2.4.8
     "fsevents@2.3.2" "fsevents@2.1.3" "fsevents@2.0.7" "fsevents@1.2.13"
-    "libpq@1.8.12"
     "buffertools@2.1.6"
     "contextify@0.1.15"
     "bcrypt@3.0.8" "bcrypt@3.0.6"
