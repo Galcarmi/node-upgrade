@@ -1,7 +1,7 @@
 #!/bin/bash
 
 packages_to_run=(
-    "canvas@2.11.0"
+    "puppeteer@19.2.0"
 )
 
 
