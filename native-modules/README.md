@@ -27,11 +27,11 @@
     "argon2@0.23.0" 
     "odbc@2.4.8"
     "libpq@1.8.12"
-    "bcrypt@3.0.8" "bcrypt@3.0.6"
+    "bcrypt@3.0.8" "bcrypt@3.0.6" - using @5.1.0 is better
+    "odbc@1.2.1" # using odbc@2.4.8 because this version using removed APIs of V8
+    "canvas@2.11.0"
 
 # not included
-    "canvas@2.11.0" 
-    "odbc@1.2.1" # odbc@2.4.8
     "fsevents@2.3.2" "fsevents@2.1.3" "fsevents@2.0.7" "fsevents@1.2.13"
     "buffertools@2.1.6"
     "contextify@0.1.15"

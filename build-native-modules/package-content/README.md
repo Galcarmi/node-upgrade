@@ -1,330 +1,401 @@
-# node-libpq
+# Puppeteer
 
-[![Build Status](https://travis-ci.org/brianc/node-libpq.svg?branch=master)](https://travis-ci.org/brianc/node-libpq)
+<!-- [START badges] -->
+[![Linux Build Status](https://img.shields.io/travis/com/GoogleChrome/puppeteer/master.svg)](https://travis-ci.com/GoogleChrome/puppeteer) [![Windows Build Status](https://img.shields.io/appveyor/ci/aslushnikov/puppeteer/master.svg?logo=appveyor)](https://ci.appveyor.com/project/aslushnikov/puppeteer/branch/master) [![Build Status](https://api.cirrus-ci.com/github/GoogleChrome/puppeteer.svg)](https://cirrus-ci.com/github/GoogleChrome/puppeteer) [![NPM puppeteer package](https://img.shields.io/npm/v/puppeteer.svg)](https://npmjs.org/package/puppeteer)
+<!-- [END badges] -->
 
-Node native bindings to the PostgreSQL [libpq](http://www.postgresql.org/docs/9.3/interactive/libpq.html) C client library.  This module attempts to mirror _as closely as possible_ the C API provided by libpq and provides the absolute minimum level of abstraction.  It is intended to be extremely low level and allow you the same access as you would have to libpq directly from C, except in node.js! The obvious trade-off for being "close to the metal" is having to use a very "c style" API in JavaScript.
+<img src="https://user-images.githubusercontent.com/10379601/29446482-04f7036a-841f-11e7-9872-91d1fc2ea683.png" height="200" align="right">
 
-If you have a good understanding of libpq or used it before hopefully the methods within node-libpq will be familiar; otherwise, you should probably spend some time reading [the official libpq C library documentation](http://www.postgresql.org/docs/9.3/interactive/libpq.html) to become a bit familiar. Referencing the libpq documentation directly should also provide you with more insight into the methods here. I will do my best to explain any differences from the C code for each method.
+###### [API](https://github.com/GoogleChrome/puppeteer/blob/v1.17.0/docs/api.md) | [FAQ](#faq) | [Contributing](https://github.com/GoogleChrome/puppeteer/blob/master/CONTRIBUTING.md) | [Troubleshooting](https://github.com/GoogleChrome/puppeteer/blob/master/docs/troubleshooting.md)
 
-I am also building some [higher level abstractions](https://github.com/brianc/node-pg-native) to eventually replace the `pg.native` portion of node-postgres.  They should help as reference material.
+> Puppeteer is a Node library which provides a high-level API to control Chrome or Chromium over the [DevTools Protocol](https://chromedevtools.github.io/devtools-protocol/). Puppeteer runs [headless](https://developers.google.com/web/updates/2017/04/headless-chrome) by default, but can be configured to run full (non-headless) Chrome or Chromium.
 
-This module relies heavily on [nan](https://github.com/rvagg/nan) and wouldn't really be possible without it. Mucho thanks to the node-nan team.
+<!-- [START usecases] -->
+###### What can I do?
 
-## install
+Most things that you can do manually in the browser can be done using Puppeteer! Here are a few examples to get you started:
 
-You need libpq installed & the `pg_config` program should be in your path.  You also need [node-gyp](https://github.com/TooTallNate/node-gyp) installed.
+* Generate screenshots and PDFs of pages.
+* Crawl a SPA (Single-Page Application) and generate pre-rendered content (i.e. "SSR" (Server-Side Rendering)).
+* Automate form submission, UI testing, keyboard input, etc.
+* Create an up-to-date, automated testing environment. Run your tests directly in the latest version of Chrome using the latest JavaScript and browser features.
+* Capture a [timeline trace](https://developers.google.com/web/tools/chrome-devtools/evaluate-performance/reference) of your site to help diagnose performance issues.
+* Test Chrome Extensions.
+<!-- [END usecases] -->
+
+Give it a spin: https://try-puppeteer.appspot.com/
+
+<!-- [START getstarted] -->
+## Getting Started
+
+### Installation
+
+To use Puppeteer in your project, run:
 
 ```bash
-$ npm install libpq
+npm i puppeteer
+# or "yarn add puppeteer"
 ```
 
-> Note: for Node.js equal or greater to version 10.16.0 you need to have at least `OpenSSL 1.1.1` installed.
+Note: When you install Puppeteer, it downloads a recent version of Chromium (~170MB Mac, ~282MB Linux, ~280MB Win) that is guaranteed to work with the API. To skip the download, see [Environment variables](https://github.com/GoogleChrome/puppeteer/blob/v1.17.0/docs/api.md#environment-variables).
 
-## use
+
+### puppeteer-core
+
+Since version 1.7.0 we publish the [`puppeteer-core`](https://www.npmjs.com/package/puppeteer-core) package,
+a version of Puppeteer that doesn't download Chromium by default.
+
+```bash
+npm i puppeteer-core
+# or "yarn add puppeteer-core"
+```
+
+`puppeteer-core` is intended to be a lightweight version of Puppeteer for launching an existing browser installation or for connecting to a remote one. Be sure that the version of puppeteer-core you install is compatible with the
+browser you intend to connect to.
+
+See [puppeteer vs puppeteer-core](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#puppeteer-vs-puppeteer-core).
+
+### Usage
+
+Note: Puppeteer requires at least Node v6.4.0, but the examples below use async/await which is only supported in Node v7.6.0 or greater.
+
+Puppeteer will be familiar to people using other browser testing frameworks. You create an instance
+of `Browser`, open pages, and then manipulate them with [Puppeteer's API](https://github.com/GoogleChrome/puppeteer/blob/v1.17.0/docs/api.md#).
+
+**Example** - navigating to https://example.com and saving a screenshot as *example.png*:
+
+Save file as **example.js**
 
 ```js
-var Libpq = require('libpq');
-var pq = new Libpq();
+const puppeteer = require('puppeteer');
+
+(async () => {
+  const browser = await puppeteer.launch();
+  const page = await browser.newPage();
+  await page.goto('https://example.com');
+  await page.screenshot({path: 'example.png'});
+
+  await browser.close();
+})();
 ```
 
-## API
+Execute script on the command line
 
-### connection functions
+```bash
+node example.js
+```
 
-Libpq provides a few different connection functions, some of which are "not preferred" anymore.  I've opted to simplify this interface a bit into a single __async__ and single __sync__ connnection function.  The function accepts an  connection string formatted as outlined [in this documentation in section 31.1.1](http://www.postgresql.org/docs/9.3/static/libpq-connect.html). If the parameters are not supplied, libpq will automatically use environment variables, a pgpass file, and other options.  Consult the libpq documentation for a better rundown of all the ways it tries to determine your connection parameters.
+Puppeteer sets an initial page size to 800px x 600px, which defines the screenshot size. The page size can be customized  with [`Page.setViewport()`](https://github.com/GoogleChrome/puppeteer/blob/v1.17.0/docs/api.md#pagesetviewportviewport).
 
-I personally __always__ connect with environment variables and skip supplying the optional `connectionParams`.  Easier, more 12 factor app-ish, and you never risk hard coding any passwords. YMMV. :smile:
+**Example** - create a PDF.
 
-##### `pq.connect([connectionParams:string], callback:function)`
-
-Asyncronously attempts to connect to the postgres server.
-
-- `connectionParams` is an optional string
-- `callback` is mandatory. It is called when the connection has successfully been established.
-
-__async__ Connects to a PostgreSQL backend server process.
-
-This function actually calls the `PQconnectdb` blocking connection method in a background thread within node's internal thread-pool. There is a way to do non-blocking network I/O for some of the connecting with libpq directly, but it still blocks when your local file system looking for config files, SSL certificates, .pgpass file, and doing possible dns resolution.  Because of this, the best way to get _fully_ non-blocking is to juse use `libuv_queue_work` and let node do it's magic and so that's what I do.  This function _does not block_.
-
-##### `pq.connectSync([connectionParams:string])`
-
-Attempts to connect to a PostgreSQL server. __BLOCKS__ until it either succeedes, or fails.  If it fails it will throw an exception.
-
-- `connectionParams` is an optional string
-
-##### `pq.finish()`
-
-Disconnects from the backend and cleans up all memory used by the libpq connection.
-
-### Connection Status Functions
-
-##### `pq.errorMessage():string`
-
-Retrieves the last error message from the connection.  This is intended to be used after most functions which return an error code to get more detailed error information about the connection.  You can also check this _before_ issuing queries to see if your connection has been lost.
-
-##### `pq.socket():int`
-
-Returns an int representing the file descriptor for the socket used internally by the connection
-
-### Sync Command Execution Functions
-
-##### `pq.exec(commandText:string)`
-
-__sync__ sends a command to the backend and blocks until a result is received.
-
-- `commandText` is a required string of the query.
-
-##### `pq.execParams(commandText:string, parameters:array[string])`
-
-__snyc__ sends a command and parameters to the backend and blocks until a result is received.
-
-- `commandText` is a required string of the query.
-- `parameters` is a required array of string values corresponding to each parameter in the commandText.
-
-##### `pq.prepare(statementName:string, commandText:string, nParams:int)`
-__sync__ sends a named statement to the server to be prepared for later execution. blocks until a result from the prepare operation is received.
-
-- `statementName` is a required string of name of the statement to prepare.
-- `commandText` is a required string of the query.
-- `nParams` is a count of the number of parameters in the commandText.
-
-##### `pq.execPrepared(statementName:string, parameters:array[string])`
-__sync__ sends a command to the server to execute a previously prepared statement. blocks until the results are returned.
-
-- `statementName` is a required string of the name of the prepared statement.
-- `parameters` are the parameters to pass to the prepared statement.
-
-### Async Command Execution Functions
-
-In libpq the async command execution functions _only_ dispatch a request to the backend to run a query.  They do not start result fetching on their own.  Because libpq is a C api there is a somewhat complicated "dance" to retrieve the result information in a non-blocking way.  node-libpq attempts to do as little as possible to abstract over this; therefore, the following functions are only part of the story.  For a complete tutorial on how to dispatch & retrieve results from libpq in an async way you can [view the complete approach here](https://github.com/brianc/node-pg-native/blob/master/index.js#L105)
-
-##### `pq.sendQuery(commandText:string):boolean`
-__async__ sends a query to the server to be processed.
-
-- `commandText` is a required string containing the query text.
-
-Returns `true` if the command was sent succesfully or `false` if it failed to send.
-
-##### `pq.sendQueryParams(commandText:string, parameters:array[string]):boolean`
-__async__ sends a query and to the server to be processed.
-
-- `commandText` is a required string containing the query text.
-- `parameters` is an array of parameters as strings used in the parameterized query.
-
-Returns `true` if the command was sent succesfully or `false` if it failed to send.
-
-##### `pq.sendPrepare(statementName:string, commandText:string, nParams:int):boolean`
-__async__ sends a request to the backend to prepare a named statement with the given name.
-
-- `statementName` is a required string of name of the statement to prepare.
-- `commandText` is a required string of the query.
-- `nParams` is a count of the number of parameters in the commandText.
-
-Returns `true` if the command was sent succesfully or `false` if it failed to send.
-
-##### `pq.sendQueryPrepared(statementName:string, parameters:array[string]):boolean`
-__async__ sends a request to execute a previously prepared statement.
-
-- `statementName` is a required string of the name of the prepared statement.
-- `parameters` are the parameters to pass to the prepared statement.
-
-##### `pq.getResult():boolean`
-Parses received data from the server into a `PGresult` struct and sets a pointer internally to the connection object to this result.  __warning__: this function will __block__ if libpq is waiting on async results to be returned from the server.  Call `pq.isBusy()` to determine if this command will block.
-
-Returns `true` if libpq was able to read buffered data & parse a result object.  Returns `false` if there are no results waiting to be parsed.  Generally doing async style queries you'll call this repeadedly until it returns false and then use the result accessor methods to pull results out of the current result set.
-
-### Result accessor functions
-
-After a command is run in either sync or async mode & the results have been received, node-libpq stores the results internally and provides you access to the results via the standard libpq methods.  The difference here is libpq will return a pointer to a PGresult structure which you access via libpq functions, but node-libpq stores the most recent result within itself and passes the opaque PGresult structure to the libpq methods.  This is to avoid passing around a whole bunch of pointers to unmanaged memory and keeps the burden of properly allocating and freeing memory within node-libpq.
-
-##### `pq.resultStatus():string`
-
-Returns either `PGRES_COMMAND_OK` or `PGRES_FATAL_ERROR` depending on the status of the last executed command.
-
-##### `pq.resultErrorMessage():string`
-
-Retrieves the error message from the result.  This will return `null` if the result does not have an error.
-
-##### `pq.resultErrorFields():object`
-
-Retrieves detailed error information from the current result object. Very similar to `PQresultErrorField()` except instead of passing a fieldCode and retrieving a single field, retrieves all fields from the error at once on a single object.  The object returned is a simple hash, _not_ an instance of an error object.  Example: if you wanted to access `PG_DIAG_MESSAGE_DETAIL` you would do the following:
+Save file as **hn.js**
 
 ```js
-console.log(pq.errorFields().messageDetail)
+const puppeteer = require('puppeteer');
+
+(async () => {
+  const browser = await puppeteer.launch();
+  const page = await browser.newPage();
+  await page.goto('https://news.ycombinator.com', {waitUntil: 'networkidle2'});
+  await page.pdf({path: 'hn.pdf', format: 'A4'});
+
+  await browser.close();
+})();
 ```
 
-##### `pq.clear()`
+Execute script on the command line
 
-Manually frees the memory associated with a `PGresult` pointer.  Generally this is called for you, but if you absolutely want to free the pointer yourself, you can.
+```bash
+node hn.js
+```
 
-##### `pq.ntuples():int`
+See [`Page.pdf()`](https://github.com/GoogleChrome/puppeteer/blob/v1.17.0/docs/api.md#pagepdfoptions) for more information about creating pdfs.
 
-Retrieve the number of tuples (rows) from the result.
+**Example** - evaluate script in the context of the page
 
-##### `pq.nfields():int`
-
-Retrieve the number of fields (columns) from the result.
-
-##### `pq.fname(fieldNumber:int):string`
-
-Retrieve the name of the field (column) at the given offset. Offset starts at 0.
-
-##### `pq.ftype(fieldNumber:int):int`
-
-Retrieve the `Oid` of the field (column) at the given offset. Offset starts at 0.
-
-##### `pq.getvalue(tupleNumber:int, fieldNumber:int):string`
-
-Retrieve the text value at a given tuple (row) and field (column) offset. Both offsets start at 0.  A null value is returned as the empty string `''`.
-
-##### `pq.getisnull(tupleNumber:int, fieldNumber:int):boolean`
-
-Returns `true` if the value at the given offsets is actually `null`.  Otherwise returns `false`.  This is because `pq.getvalue()` returns an empty string for both an actual empty string and for a `null` value.  Weird, huh?
-
-##### `pq.cmdStatus():string`
-
-Returns the status string associated with a result.  Something akin to `INSERT 3 0` if you inserted 3 rows.
-
-##### `pq.cmdTuples():string`
-
-Returns the number of tuples (rows) affected by the command. Even though this is a number, it is returned as a string to mirror libpq's behavior.
-
-### Async socket access
-
-These functions don't have a direct match within libpq.  They exist to allow you to monitor the readability or writability of the libpq socket based on your platforms equivilant to `select()`.  This allows you to perform async I/O completely from JavaScript.
-
-##### `pq.startReader()`
-
-This uses libuv to start a read watcher on the socket open to the backend.  As soon as this socket becomes readable the `pq` instance will emit a `readable` event.  It is up to you to call `pq.consumeInput()` one or more times to clear this read notification or it will continue to emit read events over and over and over.  The exact flow is outlined [here] under the documentation for `PQisBusy`.
-
-##### `pq.stopReader()`
-
-Tells libuv to stop the read watcher on the connection socket.
-
-##### `pq.writable(callback:function)`
-
-Call this to make sure the socket has flushed all data to the operating system.  Once the socket is writable, your callback will be called.  Usefully when using `PQsetNonBlocking` and `PQflush` for async writing.
-
-### More async methods
-
-These are all documented in detail within the [libpq documentation](http://www.postgresql.org/docs/9.3/static/libpq-async.html) and function almost identically.
-
-##### `pq.consumeInput():boolean`
-
-Reads waiting data from the socket.  If the socket is not readable and you call this it will __block__ so be careful and only call it within the `readable` callback for the most part.
-
-Returns `true` if data was read.  Returns `false` if there was an error.  You can access error details with `pq.errorMessage()`.
-
-##### `pq.isBusy():boolean`
-
-Returns `true` if calling `pq.consumeInput()` would block waiting for more data.  Returns `false` if all data has been read from the socket.  Once this returns `false` it is safe to call `pq.getResult()`
-
-##### `pq.setNonBlocking(nonBlocking:boolean):boolean`
-
-Toggle the socket blocking on _write_.  Returns `true` if the socket's state was succesfully toggled.  Returns `false` if there was an error.
-
-- `nonBlocking` is `true` to set the connection to use non-blocking writes. `false` to use blocking writes.
-
-##### `pq.flush():int`
-
-Flushes buffered data to the socket.  Returns `1` if socket is not write-ready at which case you should call `pq.writable` with a callback and wait for the socket to be writable and then call `pq.flush()` again.  Returns `0` if all data was flushed.  Returns `-1` if there was an error.
-
-### listen/notify
-
-##### `pq.notifies():object`
-
-Checks for `NOTIFY` messages that have come in.  If any have been received they will be in the following format:
+Save file as **get-dimensions.js**
 
 ```js
-var msg = {
-  relname: 'name of channel',
-  extra: 'message passed to notify command',
-  be_pid: 130
-}
+const puppeteer = require('puppeteer');
+
+(async () => {
+  const browser = await puppeteer.launch();
+  const page = await browser.newPage();
+  await page.goto('https://example.com');
+
+  // Get the "viewport" of the page, as reported by the page.
+  const dimensions = await page.evaluate(() => {
+    return {
+      width: document.documentElement.clientWidth,
+      height: document.documentElement.clientHeight,
+      deviceScaleFactor: window.devicePixelRatio
+    };
+  });
+
+  console.log('Dimensions:', dimensions);
+
+  await browser.close();
+})();
 ```
 
-### COPY IN/OUT
+Execute script on the command line
 
-##### `pq.putCopyData(buffer:Buffer):int`
-
-After issuing a successful command like `COPY table FROM stdin` you can start putting buffers directly into the databse with this function.
-
-- `buffer` Is a required node buffer of text data such as `Buffer('column1\tcolumn2\n')`
-
-Returns `1` if sent succesfully. Returns `0` if the command would block (only if you have called `pq.setNonBlocking(true)`). Returns `-1` if there was an error sending the command.
-
-##### `pq.putCopyEnd([errorMessage:string])`
-
-Signals the backed your copy procedure is complete.  If you pass `errorMessage` it will be sent to the backend and effectively cancel the copy operation.
-
-- `errorMessage` is an _optional_ string you can pass to cancel the copy operation.
-
-Returns `1` if sent succesfully. Returns `0` if the command would block (only if you have called `pq.setNonBlocking(true)`). Returns `-1` if there was an error sending the command.
-
-
-##### `pq.getCopyData(async:boolean):Buffer or int`
-
-After issuing a successfuly command like `COPY table TO stdout` gets copy data from the connection.
-
-Returns a node buffer if there is data available.
-
-Returns `0` if the copy is still in progress (only if you have called `pq.setNonBlocking(true)`). Returns `-1` if the copy is completed. Returns `-2` if there was an error.
-
-- `async` is a boolean. Pass `false` to __block__ waiting for data from the backend. _defaults to `false`_
-
-### Misc Functions
-
-##### `pq.escapeLiteral(input:string):string`
-
-Exact copy of the `PQescapeLiteral` function within libpq.  Requires an established connection but does not perform any I/O.
-
-##### `pq.escapeIdentifier(input:string):string`
-
-Exact copy of the `PQescapeIdentifier` function within libpq.  Requires an established connection but does not perform any I/O.
-
-##### `pq.cancel():true -or- string`
-
-Issues a request to cancel the currently executing query _on this instance of libpq_.  Returns `true` if the cancel request was sent.  Returns a `string` error message if the cancel request failed for any reason. The string will contain the error message provided by libpq.
-
-##### `pq.serverVersion():number`
-
-Returns the version of the connected PostgreSQL backend server as a number.
-
-## testing
-
-```sh
-$ npm test
+```bash
+node get-dimensions.js
 ```
 
-To run the tests you need a PostgreSQL backend reachable by typing `psql` with no connection parameters in your terminal. The tests use [environment variables](http://www.postgresql.org/docs/9.3/static/libpq-envars.html) to connect to the backend. 
+See [`Page.evaluate()`](https://github.com/GoogleChrome/puppeteer/blob/v1.17.0/docs/api.md#pageevaluatepagefunction-args) for more information on `evaluate` and related methods like `evaluateOnNewDocument` and `exposeFunction`.
 
-An example of supplying a specific host the tests:
+<!-- [END getstarted] -->
 
-```sh
-$ PGHOST=blabla.mydatabasehost.com npm test
+<!-- [START runtimesettings] -->
+## Default runtime settings
+
+**1. Uses Headless mode**
+
+Puppeteer launches Chromium in [headless mode](https://developers.google.com/web/updates/2017/04/headless-chrome). To launch a full version of Chromium, set the ['headless' option](https://github.com/GoogleChrome/puppeteer/blob/v1.17.0/docs/api.md#puppeteerlaunchoptions) when launching a browser:
+
+```js
+const browser = await puppeteer.launch({headless: false}); // default is true
 ```
 
+**2. Runs a bundled version of Chromium**
 
-## license
+By default, Puppeteer downloads and uses a specific version of Chromium so its API
+is guaranteed to work out of the box. To use Puppeteer with a different version of Chrome or Chromium,
+pass in the executable's path when creating a `Browser` instance:
 
-The MIT License (MIT)
+```js
+const browser = await puppeteer.launch({executablePath: '/path/to/Chrome'});
+```
 
-Copyright (c) 2014 Brian M. Carlson
+See [`Puppeteer.launch()`](https://github.com/GoogleChrome/puppeteer/blob/v1.17.0/docs/api.md#puppeteerlaunchoptions) for more information.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+See [`this article`](https://www.howtogeek.com/202825/what%E2%80%99s-the-difference-between-chromium-and-chrome/) for a description of the differences between Chromium and Chrome. [`This article`](https://chromium.googlesource.com/chromium/src/+/master/docs/chromium_browser_vs_google_chrome.md) describes some differences for Linux users.
 
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
+**3. Creates a fresh user profile**
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
+Puppeteer creates its own Chromium user profile which it **cleans up on every run**.
+
+<!-- [END runtimesettings] -->
+
+## Resources
+
+- [API Documentation](https://github.com/GoogleChrome/puppeteer/blob/v1.17.0/docs/api.md)
+- [Examples](https://github.com/GoogleChrome/puppeteer/tree/master/examples/)
+- [Community list of Puppeteer resources](https://github.com/transitive-bullshit/awesome-puppeteer)
+
+
+<!-- [START debugging] -->
+
+## Debugging tips
+
+1. Turn off headless mode - sometimes it's useful to see what the browser is
+   displaying. Instead of launching in headless mode, launch a full version of
+   the browser using  `headless: false`:
+
+        const browser = await puppeteer.launch({headless: false});
+
+2. Slow it down - the `slowMo` option slows down Puppeteer operations by the
+   specified amount of milliseconds. It's another way to help see what's going on.
+
+        const browser = await puppeteer.launch({
+          headless: false,
+          slowMo: 250 // slow down by 250ms
+        });
+
+3. Capture console output - You can listen for the `console` event.
+   This is also handy when debugging code in `page.evaluate()`:
+
+        page.on('console', msg => console.log('PAGE LOG:', msg.text()));
+
+        await page.evaluate(() => console.log(`url is ${location.href}`));
+
+4. Use debugger in application code browser
+
+    There are two execution context: node.js that is running test code, and the browser
+    running application code being tested. This lets you debug code in the
+    application code browser; ie code inside `evaluate()`.
+
+    - Use `{devtools: true}` when launching Puppeteer:
+
+        `const browser = await puppeteer.launch({devtools: true});`
+
+    - Change default test timeout:
+
+        jest: `jest.setTimeout(100000);`
+
+        jasmine: `jasmine.DEFAULT_TIMEOUT_INTERVAL = 100000;`
+
+        mocha: `this.timeout(100000);` (don't forget to change test to use [function and not '=>'](https://stackoverflow.com/a/23492442))
+
+    - Add an evaluate statement with `debugger` inside / add  `debugger` to an existing evaluate statement:
+
+      `await page.evaluate(() => {debugger;});`
+
+       The test will now stop executing in the above evaluate statement, and chromium will stop in debug mode.
+
+5. Use debugger in node.js
+
+    This will let you debug test code. For example, you can step over `await page.click()` in the node.js script and see the click happen in the application code browser.
+
+    Note that you won't be able to run `await page.click()` in
+    DevTools console due to this [Chromium bug](https://bugs.chromium.org/p/chromium/issues/detail?id=833928). So if
+    you want to try something out, you have to add it to your test file.
+
+    - Add `debugger;` to your test, eg:
+      ```
+      debugger;
+      await page.click('a[target=_blank]');
+      ```
+    - Set `headless` to `false`
+    - Run `node --inspect-brk`, eg `node --inspect-brk node_modules/.bin/jest tests`
+    - In Chrome open `chrome://inspect/#devices` and click `inspect`
+    - In the newly opened test browser, type `F8` to resume test execution
+    - Now your `debugger` will be hit and you can debug in the test browser
+
+
+6. Enable verbose logging - internal DevTools protocol traffic
+   will be logged via the [`debug`](https://github.com/visionmedia/debug) module under the `puppeteer` namespace.
+
+        # Basic verbose logging
+        env DEBUG="puppeteer:*" node script.js
+
+        # Protocol traffic can be rather noisy. This example filters out all Network domain messages
+        env DEBUG="puppeteer:*" env DEBUG_COLORS=true node script.js 2>&1 | grep -v '"Network'
+
+7. Debug your Puppeteer (node) code easily, using [ndb](https://github.com/GoogleChromeLabs/ndb)
+
+  - `npm install -g ndb` (or even better, use [npx](https://github.com/zkat/npx)!)
+
+  - add a `debugger` to your Puppeteer (node) code
+
+  - add `ndb` (or `npx ndb`) before your test command. For example:
+
+    `ndb jest` or `ndb mocha` (or `npx ndb jest` / `npx ndb mocha`)
+
+  - debug your test inside chromium like a boss!
+
+
+<!-- [END debugging] -->
+
+## Contributing to Puppeteer
+
+Check out [contributing guide](https://github.com/GoogleChrome/puppeteer/blob/master/CONTRIBUTING.md) to get an overview of Puppeteer development.
+
+<!-- [START faq] -->
+
+# FAQ
+
+#### Q: Who maintains Puppeteer?
+
+The Chrome DevTools team maintains the library, but we'd love your help and expertise on the project!
+See [Contributing](https://github.com/GoogleChrome/puppeteer/blob/master/CONTRIBUTING.md).
+
+#### Q: What are Puppeteer’s goals and principles?
+
+The goals of the project are:
+
+- Provide a slim, canonical library that highlights the capabilities of the [DevTools Protocol](https://chromedevtools.github.io/devtools-protocol/).
+- Provide a reference implementation for similar testing libraries. Eventually, these other frameworks could adopt Puppeteer as their foundational layer.
+- Grow the adoption of headless/automated browser testing.
+- Help dogfood new DevTools Protocol features...and catch bugs!
+- Learn more about the pain points of automated browser testing and help fill those gaps.
+
+We adapt [Chromium principles](https://www.chromium.org/developers/core-principles) to help us drive product decisions:
+- **Speed**: Puppeteer has almost zero performance overhead over an automated page.
+- **Security**: Puppeteer operates off-process with respect to Chromium, making it safe to automate potentially malicious pages.
+- **Stability**: Puppeteer should not be flaky and should not leak memory.
+- **Simplicity**: Puppeteer provides a high-level API that’s easy to use, understand, and debug.
+
+#### Q: Is Puppeteer replacing Selenium/WebDriver?
+
+**No**. Both projects are valuable for very different reasons:
+- Selenium/WebDriver focuses on cross-browser automation; its value proposition is a single standard API that works across all major browsers.
+- Puppeteer focuses on Chromium; its value proposition is richer functionality and higher reliability.
+
+That said, you **can** use Puppeteer to run tests against Chromium, e.g. using the community-driven [jest-puppeteer](https://github.com/smooth-code/jest-puppeteer). While this probably shouldn’t be your only testing solution, it does have a few good points compared to WebDriver:
+
+- Puppeteer requires zero setup and comes bundled with the Chromium version it works best with, making it [very easy to start with](https://github.com/GoogleChrome/puppeteer/#getting-started). At the end of the day, it’s better to have a few tests running chromium-only, than no tests at all.
+- Puppeteer has event-driven architecture, which removes a lot of potential flakiness. There’s no need for evil “sleep(1000)” calls in puppeteer scripts.
+- Puppeteer runs headless by default, which makes it fast to run. Puppeteer v1.5.0 also exposes browser contexts, making it possible to efficiently parallelize test execution.
+- Puppeteer shines when it comes to debugging: flip the “headless” bit to false, add “slowMo”, and you’ll see what the browser is doing. You can even open Chrome DevTools to inspect the test environment.
+
+#### Q: Why doesn’t Puppeteer v.XXX work with Chromium v.YYY?
+
+We see Puppeteer as an **indivisible entity** with Chromium. Each version of Puppeteer bundles a specific version of Chromium – **the only** version it is guaranteed to work with.
+
+This is not an artificial constraint: A lot of work on Puppeteer is actually taking place in the Chromium repository. Here’s a typical story:
+- A Puppeteer bug is reported: https://github.com/GoogleChrome/puppeteer/issues/2709
+- It turned out this is an issue with the DevTools protocol, so we’re fixing it in Chromium: https://chromium-review.googlesource.com/c/chromium/src/+/1102154
+- Once the upstream fix is landed, we roll updated Chromium into Puppeteer: https://github.com/GoogleChrome/puppeteer/pull/2769
+
+However, oftentimes it is desirable to use Puppeteer with the official Google Chrome rather than Chromium. For this to work, you should install a `puppeteer-core` version that corresponds to the Chrome version.
+
+For example, in order to drive Chrome 71 with puppeteer-core, use `chrome-71` npm tag:
+```bash
+npm install puppeteer-core@chrome-71
+```
+
+#### Q: Which Chromium version does Puppeteer use?
+
+Look for `chromium_revision` in [package.json](https://github.com/GoogleChrome/puppeteer/blob/master/package.json).
+
+#### Q: What’s considered a “Navigation”?
+
+From Puppeteer’s standpoint, **“navigation” is anything that changes a page’s URL**.
+Aside from regular navigation where the browser hits the network to fetch a new document from the web server, this includes [anchor navigations](https://www.w3.org/TR/html5/single-page.html#scroll-to-fragid) and [History API](https://developer.mozilla.org/en-US/docs/Web/API/History_API) usage.
+
+With this definition of “navigation,” **Puppeteer works seamlessly with single-page applications.**
+
+#### Q: What’s the difference between a “trusted" and "untrusted" input event?
+
+In browsers, input events could be divided into two big groups: trusted vs. untrusted.
+
+- **Trusted events**: events generated by users interacting with the page, e.g. using a mouse or keyboard.
+- **Untrusted event**: events generated by Web APIs, e.g. `document.createEvent` or `element.click()` methods.
+
+Websites can distinguish between these two groups:
+- using an [`Event.isTrusted`](https://developer.mozilla.org/en-US/docs/Web/API/Event/isTrusted) event flag
+- sniffing for accompanying events. For example, every trusted `'click'` event is preceded by `'mousedown'` and `'mouseup'` events.
+
+For automation purposes it’s important to generate trusted events. **All input events generated with Puppeteer are trusted and fire proper accompanying events.** If, for some reason, one needs an untrusted event, it’s always possible to hop into a page context with `page.evaluate` and generate a fake event:
+
+```js
+await page.evaluate(() => {
+  document.querySelector('button[type=submit]').click();
+});
+```
+
+#### Q: What features does Puppeteer not support?
+
+You may find that Puppeteer does not behave as expected when controlling pages that incorporate audio and video. (For example, [video playback/screenshots is likely to fail](https://github.com/GoogleChrome/puppeteer/issues/291).) There are two reasons for this:
+
+* Puppeteer is bundled with Chromium--not Chrome--and so by default, it inherits all of [Chromium's media-related limitations](https://www.chromium.org/audio-video). This means that Puppeteer does not support licensed formats such as AAC or H.264. (However, it is possible to force Puppeteer to use a separately-installed version Chrome instead of Chromium via the [`executablePath` option to `puppeteer.launch`](https://github.com/GoogleChrome/puppeteer/blob/v1.17.0/docs/api.md#puppeteerlaunchoptions). You should only use this configuration if you need an official release of Chrome that supports these media formats.)
+* Since Puppeteer (in all configurations) controls a desktop version of Chromium/Chrome, features that are only supported by the mobile version of Chrome are not supported. This means that Puppeteer [does not support HTTP Live Streaming (HLS)](https://caniuse.com/#feat=http-live-streaming).
+
+#### Q: I am having trouble installing / running Puppeteer in my test environment. Where should I look for help?
+We have a [troubleshooting](https://github.com/GoogleChrome/puppeteer/blob/master/docs/troubleshooting.md) guide for various operating systems that lists the required dependencies.
+
+#### Q: How do I try/test a prerelease version of Puppeteer?
+
+You can check out this repo or install the latest prerelease from npm:
+
+```bash
+npm i --save puppeteer@next
+```
+
+Please note that prerelease may be unstable and contain bugs.
+
+#### Q: I have more questions! Where do I ask?
+
+There are many ways to get help on Puppeteer:
+- [bugtracker](https://github.com/GoogleChrome/puppeteer/issues)
+- [stackoverflow](https://stackoverflow.com/questions/tagged/puppeteer)
+- [slack channel](https://join.slack.com/t/puppeteer/shared_invite/enQtMzU4MjIyMDA5NTM4LTM1OTdkNDhlM2Y4ZGUzZDdjYjM5ZWZlZGFiZjc4MTkyYTVlYzIzYjU5NDIyNzgyMmFiNDFjN2UzNWU0N2ZhZDc)
+
+Make sure to search these channels before posting your question.
+
+
+<!-- [END faq] -->
