@@ -1,7 +1,7 @@
 #!/bin/bash
 
 packages_to_run=(
-    "bcrypt@5.0.1"
+    "bufferutil@4.0.1"
 )
 
 
