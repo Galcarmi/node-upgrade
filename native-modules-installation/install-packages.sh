@@ -1,7 +1,7 @@
 #!/bin/bash
 
 packages_to_run=(
-    "sqlite3@5.1.6"
+    "utf-8-validate@6.0.3"
 )
 
 
