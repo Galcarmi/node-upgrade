@@ -1,7 +1,7 @@
 #!/bin/bash
 
 packages_to_run=(
-    "puppeteer@19.2.0"
+    "bcrypt@5.0.1"
 )
 
 
