@@ -1,7 +1,7 @@
 #!/bin/bash
 
 packages_to_run=(
-    "bufferutil@4.0.1"
+    "puppeteer@21.1.0"
 )
 
 
