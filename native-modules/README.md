@@ -31,6 +31,8 @@
     "odbc@1.2.1" # using odbc@2.4.8 because this version using removed APIs of V8
     "canvas@2.11.0"
     "bcrypt@5.0.1"
+    "bufferutil@4.0.1"
+    "sqlite3@5.1.6"
 
 # not included
     "fsevents@2.3.2" "fsevents@2.1.3" "fsevents@2.0.7" "fsevents@1.2.13"

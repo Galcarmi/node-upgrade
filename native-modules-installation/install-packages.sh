@@ -1,7 +1,7 @@
 #!/bin/bash
 
 packages_to_run=(
-    "utf-8-validate@6.0.3"
+    "bufferutil@4.0.1"
 )
 
 
