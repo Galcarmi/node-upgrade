@@ -13,7 +13,7 @@ RUN echo deb http://deb.debian.org/debian buster main>/etc/apt/sources.list\
 # Since we're now building native deps 😢, we'll need some build tools
 RUN apt-get update && apt-get upgrade -y && apt-get install python3 pkg-config build-essential\
     # and those are the deps for "canvas" npm package
-    libpixman-1-dev libcairo2-dev libpango1.0-dev libjpeg62-turbo-dev libgif-dev\
+    libpixman-1-dev libcairo2-dev unixodbc-dev libpango1.0-dev libjpeg62-turbo-dev libgif-dev\
     -y
 
 

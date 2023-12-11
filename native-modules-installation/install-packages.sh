@@ -1,7 +1,7 @@
 #!/bin/bash
 
 packages_to_run=(
-    "puppeteer@21.1.0"
+    "odbc@1.4.10"
 )
 
 
